@@ -219,4 +219,61 @@
       const node = document.createElement(tag);
       Object.assign(node, props);
       for (const c of children){
-        if (typeof c === "string") node.appendChild(document.c
+        if (typeof c === "string") node.appendChild(document.createTextNode(c));
+        else if (c) node.appendChild(c);
+      }
+      return node;
+    }
+
+    function render(){
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      const n = clamp(parseInt(document.getElementById('count').value || 4, 10), 2, 4);
+      const palette = buildPalette(n);
+
+      palette.forEach(({hex, rgb}) => {
+        const card = el('div', { className: 'swatch-card' });
+        const circle = el('div', { className: 'circle' });
+        circle.style.background = hex;
+
+        const codes = el('div', { className: 'codes' });
+
+        const hexBtn = el('button', { className: 'code', title: 'Copy HEX' },
+          el('strong', {}, hex), el('small', {}, 'HEX')
+        );
+        hexBtn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(hex);
+            hexBtn.textContent = hex + ' ✓';
+            setTimeout(()=>hexBtn.innerHTML = `<strong>${hex}</strong> <small>HEX</small>`, 700);
+          } catch {}
+        });
+
+        const rgbStr = formatRgb(rgb);
+        const rgbBtn = el('button', { className: 'code', title: 'Copy RGB' },
+          el('strong', {}, rgbStr), el('small', {}, 'RGB')
+        );
+        rgbBtn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(rgbStr);
+            rgbBtn.textContent = rgbStr + ' ✓';
+            setTimeout(()=>rgbBtn.innerHTML = `<strong>${rgbStr}</strong> <small>RGB</small>`, 700);
+          } catch {}
+        });
+
+        codes.append(hexBtn, rgbBtn);
+        card.append(circle, codes);
+        grid.append(card);
+      });
+    }
+
+    // Init
+    document.getElementById('regen').addEventListener('click', render);
+    document.getElementById('count').addEventListener('change', render);
+    document.addEventListener('keydown', (e) => {
+      if (e.key.toLowerCase() === 'g') render(); // quick regen via keyboard
+    });
+    render();
+  </script>
+</body>
+</html>
