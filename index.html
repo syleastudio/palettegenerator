@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Palette Generator – 2 to 4 Colors</title>
+  <title>Random Palette Generator — 2–4 Colors</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 
   <style>
     :root{
       --bg: #F4E8D2;   /* page background */
-      --ink: #1C1D2E;  /* text & UI color (assumption: #1C1D2E) */
+      --ink: #1C1D2E;  /* text & UI color (adjust if you have a specific hex) */
       --card: #FFFFFF; /* white rectangles */
       --radius-lg: 16px;
       --radius-sm: 10px;
@@ -57,10 +57,11 @@
       color: var(--ink);
       border-radius: var(--radius-sm);
       padding: 10px 14px;
-      font-weight: 600;
+      font: 600 1rem "Poppins", sans-serif;
       cursor: pointer;
-      transition: transform .04s ease;
+      transition: background .15s ease, transform .04s ease;
     }
+    .btn:hover{ background: rgba(255,255,255,.4); }
     .btn:active{ transform: translateY(1px); }
 
     .count{
@@ -71,7 +72,7 @@
       background: var(--card);
       border-radius: var(--radius-sm);
       border: 2px solid var(--ink);
-      font-weight: 600;
+      font: 600 1rem "Poppins", sans-serif;
     }
     .count input{
       width: 52px;
@@ -123,15 +124,22 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
+      font-family: "Poppins", sans-serif; /* Poppins anche nei bottoni */
       font-variant-numeric: tabular-nums;
-      padding: 8px 10px;
+      font-weight: 500;
+      padding: 10px 12px;
       border-radius: var(--radius-sm);
-      border: 2px dashed var(--ink);
+      border: 2px solid var(--ink); /* bordo solido, definito */
       background: #fff;
+      color: var(--ink);
       cursor: pointer;
       user-select: none;
+      transition: background .15s ease, transform .05s ease;
     }
-    .code small{ opacity: .7; }
+    .code:hover { background: #F7F7F7; }
+    .code:active { transform: translateY(1px); }
+    .code strong { font-weight: 600; }
+    .code small { opacity: .65; font-size: .8em; }
 
     .footer{
       margin-top: 18px;
@@ -155,7 +163,7 @@
 
     <section class="grid" id="grid" aria-live="polite"></section>
 
-    <p class="footer">Tip: click a code to copy it. Palettes are generated from harmonious HSL schemes (analogous/triadic/complementary) and converted to HEX/RGB.</p>
+    <p class="footer">Tip: click any code to copy it. Palettes are generated from harmonious HSL schemes (analogous / triadic / complementary) and converted to HEX &amp; RGB.</p>
   </div>
 
   <script>
@@ -172,8 +180,7 @@
     }
     const toHex = v => v.toString(16).padStart(2, '0').toUpperCase();
     const rgbToHex = ([r,g,b]) => `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-
-    function formatRgb([r,g,b]){ return `rgb(${r}, ${g}, ${b})`; }
+    const formatRgb = ([r,g,b]) => `rgb(${r}, ${g}, ${b})`;
 
     // Generate harmonious hues based on a base hue
     function schemeHues(base, n){
@@ -187,7 +194,7 @@
         // triadic-ish
         offsets = [0, 120, -120, 60].slice(0,n);
       } else {
-        // complementary/split
+        // complementary / split
         offsets = [0, 180, 150, 210].slice(0,n);
       }
       return offsets.map(o => (base + o + 360) % 360);
@@ -212,53 +219,4 @@
       const node = document.createElement(tag);
       Object.assign(node, props);
       for (const c of children){
-        if (typeof c === "string") node.appendChild(document.createTextNode(c));
-        else if (c) node.appendChild(c);
-      }
-      return node;
-    }
-
-    function render(){
-      const grid = document.getElementById('grid');
-      grid.innerHTML = '';
-      const n = clamp(parseInt(document.getElementById('count').value || 4, 10), 2, 4);
-      const palette = buildPalette(n);
-
-      palette.forEach(({hex, rgb}) => {
-        const card = el('div', { className: 'swatch-card' });
-        const circle = el('div', { className: 'circle' });
-        circle.style.background = hex;
-
-        const codes = el('div', { className: 'codes' });
-
-        const hexBtn = el('button', { className: 'code', title: 'Copy HEX' },
-          el('strong', {}, hex), el('small', {}, 'HEX')
-        );
-        hexBtn.addEventListener('click', async () => {
-          try { await navigator.clipboard.writeText(hex); hexBtn.textContent = hex + ' ✓'; setTimeout(()=>hexBtn.innerHTML = `<strong>${hex}</strong> <small>HEX</small>`, 700); } catch {}
-        });
-
-        const rgbStr = formatRgb(rgb);
-        const rgbBtn = el('button', { className: 'code', title: 'Copy RGB' },
-          el('strong', {}, rgbStr), el('small', {}, 'RGB')
-        );
-        rgbBtn.addEventListener('click', async () => {
-          try { await navigator.clipboard.writeText(rgbStr); rgbBtn.textContent = rgbStr + ' ✓'; setTimeout(()=>rgbBtn.innerHTML = `<strong>${rgbStr}</strong> <small>RGB</small>`, 700); } catch {}
-        });
-
-        codes.append(hexBtn, rgbBtn);
-        card.append(circle, codes);
-        grid.append(card);
-      });
-    }
-
-    // Init
-    document.getElementById('regen').addEventListener('click', render);
-    document.getElementById('count').addEventListener('change', render);
-    document.addEventListener('keydown', (e) => {
-      if (e.key.toLowerCase() === 'g') render(); // quick regen via keyboard
-    });
-    render();
-  </script>
-</body>
-</html>
+        if (typeof c === "string") node.appendChild(document.c
