@@ -9,7 +9,7 @@
   <style>
     :root{
       --bg: #F4E8D2;   /* page background */
-      --ink: #1C1D2E;  /* text & UI color (adjust if you have a specific hex) */
+      --ink: #1C1D2E;  /* text & UI color */
       --card: #FFFFFF; /* white rectangles */
       --radius-lg: 16px;
       --radius-sm: 10px;
@@ -124,12 +124,12 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      font-family: "Poppins", sans-serif; /* Poppins anche nei bottoni */
+      font-family: "Poppins", sans-serif;
       font-variant-numeric: tabular-nums;
       font-weight: 500;
       padding: 10px 12px;
       border-radius: var(--radius-sm);
-      border: 2px solid var(--ink); /* bordo solido, definito */
+      border: 2px solid var(--ink);
       background: #fff;
       color: var(--ink);
       cursor: pointer;
@@ -171,7 +171,6 @@
     const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 
     function hslToRgb(h, s, l) {
-      // h: 0–360, s/l: 0–100
       s /= 100; l /= 100;
       const k = n => (n + h/30) % 12;
       const a = s * Math.min(l, 1 - l);
@@ -180,21 +179,19 @@
     }
     const toHex = v => v.toString(16).padStart(2, '0').toUpperCase();
     const rgbToHex = ([r,g,b]) => `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-    const formatRgb = ([r,g,b]) => `rgb(${r}, ${g}, ${b})`;
 
-    // Generate harmonious hues based on a base hue
+    // >>> MODIFICA QUI: scrittura RGB maiuscolo <<<
+    const formatRgb = ([r,g,b]) => `RGB(${r}, ${g}, ${b})`;
+
     function schemeHues(base, n){
       const pick = Math.random();
       let offsets;
       if (pick < 0.33) {
-        // analogous
-        const step = 18 + Math.random()*10; // 18–28°
+        const step = 18 + Math.random()*10;
         offsets = [0, step, -step, 2*step].slice(0,n);
       } else if (pick < 0.66) {
-        // triadic-ish
         offsets = [0, 120, -120, 60].slice(0,n);
       } else {
-        // complementary / split
         offsets = [0, 180, 150, 210].slice(0,n);
       }
       return offsets.map(o => (base + o + 360) % 360);
@@ -203,15 +200,13 @@
     function buildPalette(n){
       const baseHue = Math.floor(Math.random()*360);
       const hues = schemeHues(baseHue, n);
-      // pleasant saturation/lightness ranges
       return hues.map((h, i) => {
-        const s = 55 + Math.random()*25; // 55–80
-        // vary lightness a bit to avoid all same tone
+        const s = 55 + Math.random()*25;
         const lBase = 52 + (i%2===0 ? 8 : -8) + (Math.random()*6 - 3);
         const l = clamp(lBase, 35, 75);
         const rgb = hslToRgb(h, s, l);
         const hex = rgbToHex(rgb);
-        return { h: Math.round(h), s: Math.round(s), l: Math.round(l), rgb, hex };
+        return { rgb, hex };
       });
     }
 
@@ -267,11 +262,10 @@
       });
     }
 
-    // Init
     document.getElementById('regen').addEventListener('click', render);
     document.getElementById('count').addEventListener('change', render);
     document.addEventListener('keydown', (e) => {
-      if (e.key.toLowerCase() === 'g') render(); // quick regen via keyboard
+      if (e.key.toLowerCase() === 'g') render();
     });
     render();
   </script>
