@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Palette Generator – 2 to 4 Colors</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg: #F4E8D2;   /* page background */
+      --ink: #1C1D2E;  /* text & UI color (assumption: #1C1D2E) */
+      --card: #FFFFFF; /* white rectangles */
+      --radius-lg: 16px;
+      --radius-sm: 10px;
+      --shadow: 0 6px 20px rgba(28,29,46,0.08);
+    }
+
+    *{ box-sizing: border-box; }
+    html, body{
+      height: 100%;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Poppins", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    .wrap{
+      max-width: 980px;
+      margin: 32px auto;
+      padding: 24px;
+    }
+
+    header{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    header h1{
+      font-size: 1.25rem;
+      margin: 0;
+      font-weight: 600;
+      letter-spacing: .2px;
+    }
+
+    .controls{
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .btn{
+      appearance: none;
+      border: 2px solid var(--ink);
+      background: transparent;
+      color: var(--ink);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform .04s ease;
+    }
+    .btn:active{ transform: translateY(1px); }
+
+    .count{
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--card);
+      border-radius: var(--radius-sm);
+      border: 2px solid var(--ink);
+      font-weight: 600;
+    }
+    .count input{
+      width: 52px;
+      border: 0;
+      background: transparent;
+      font: inherit;
+      color: var(--ink);
+      text-align: center;
+      outline: none;
+    }
+
+    .grid{
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    @media (min-width: 760px){
+      .grid{ grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+
+    .swatch-card{
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 14px 14px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      min-height: 220px;
+    }
+
+    .circle{
+      width: 120px;
+      height: 120px;
+      border-radius: 999px;
+      border: 6px solid var(--ink);
+      box-shadow: inset 0 0 0 2px rgba(0,0,0,0.02);
+    }
+
+    .codes{
+      width: 100%;
+      text-align: center;
+      display: grid;
+      gap: 6px;
+    }
+    .code{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-variant-numeric: tabular-nums;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      border: 2px dashed var(--ink);
+      background: #fff;
+      cursor: pointer;
+      user-select: none;
+    }
+    .code small{ opacity: .7; }
+
+    .footer{
+      margin-top: 18px;
+      font-size: .9rem;
+      opacity: .8;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Random Palette Generator — 2 to 4 harmonious colors</h1>
+      <div class="controls">
+        <label class="count" title="How many colors? (2–4)">
+          <span>Colors</span>
+          <input id="count" type="number" min="2" max="4" value="4" />
+        </label>
+        <button class="btn" id="regen">Generate</button>
+      </div>
+    </header>
+
+    <section class="grid" id="grid" aria-live="polite"></section>
+
+    <p class="footer">Tip: click a code to copy it. Palettes are generated from harmonious HSL schemes (analogous/triadic/complementary) and converted to HEX/RGB.</p>
+  </div>
+
+  <script>
+    // --- Utilities ---
+    const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+
+    function hslToRgb(h, s, l) {
+      // h: 0–360, s/l: 0–100
+      s /= 100; l /= 100;
+      const k = n => (n + h/30) % 12;
+      const a = s * Math.min(l, 1 - l);
+      const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+      return [Math.round(255 * f(0)), Math.round(255 * f(8)), Math.round(255 * f(4))];
+    }
+    const toHex = v => v.toString(16).padStart(2, '0').toUpperCase();
+    const rgbToHex = ([r,g,b]) => `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+
+    function formatRgb([r,g,b]){ return `rgb(${r}, ${g}, ${b})`; }
+
+    // Generate harmonious hues based on a base hue
+    function schemeHues(base, n){
+      const pick = Math.random();
+      let offsets;
+      if (pick < 0.33) {
+        // analogous
+        const step = 18 + Math.random()*10; // 18–28°
+        offsets = [0, step, -step, 2*step].slice(0,n);
+      } else if (pick < 0.66) {
+        // triadic-ish
+        offsets = [0, 120, -120, 60].slice(0,n);
+      } else {
+        // complementary/split
+        offsets = [0, 180, 150, 210].slice(0,n);
+      }
+      return offsets.map(o => (base + o + 360) % 360);
+    }
+
+    function buildPalette(n){
+      const baseHue = Math.floor(Math.random()*360);
+      const hues = schemeHues(baseHue, n);
+      // pleasant saturation/lightness ranges
+      return hues.map((h, i) => {
+        const s = 55 + Math.random()*25; // 55–80
+        // vary lightness a bit to avoid all same tone
+        const lBase = 52 + (i%2===0 ? 8 : -8) + (Math.random()*6 - 3);
+        const l = clamp(lBase, 35, 75);
+        const rgb = hslToRgb(h, s, l);
+        const hex = rgbToHex(rgb);
+        return { h: Math.round(h), s: Math.round(s), l: Math.round(l), rgb, hex };
+      });
+    }
+
+    function el(tag, props={}, ...children){
+      const node = document.createElement(tag);
+      Object.assign(node, props);
+      for (const c of children){
+        if (typeof c === "string") node.appendChild(document.createTextNode(c));
+        else if (c) node.appendChild(c);
+      }
+      return node;
+    }
+
+    function render(){
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      const n = clamp(parseInt(document.getElementById('count').value || 4, 10), 2, 4);
+      const palette = buildPalette(n);
+
+      palette.forEach(({hex, rgb}) => {
+        const card = el('div', { className: 'swatch-card' });
+        const circle = el('div', { className: 'circle' });
+        circle.style.background = hex;
+
+        const codes = el('div', { className: 'codes' });
+
+        const hexBtn = el('button', { className: 'code', title: 'Copy HEX' },
+          el('strong', {}, hex), el('small', {}, 'HEX')
+        );
+        hexBtn.addEventListener('click', async () => {
+          try { await navigator.clipboard.writeText(hex); hexBtn.textContent = hex + ' ✓'; setTimeout(()=>hexBtn.innerHTML = `<strong>${hex}</strong> <small>HEX</small>`, 700); } catch {}
+        });
+
+        const rgbStr = formatRgb(rgb);
+        const rgbBtn = el('button', { className: 'code', title: 'Copy RGB' },
+          el('strong', {}, rgbStr), el('small', {}, 'RGB')
+        );
+        rgbBtn.addEventListener('click', async () => {
+          try { await navigator.clipboard.writeText(rgbStr); rgbBtn.textContent = rgbStr + ' ✓'; setTimeout(()=>rgbBtn.innerHTML = `<strong>${rgbStr}</strong> <small>RGB</small>`, 700); } catch {}
+        });
+
+        codes.append(hexBtn, rgbBtn);
+        card.append(circle, codes);
+        grid.append(card);
+      });
+    }
+
+    // Init
+    document.getElementById('regen').addEventListener('click', render);
+    document.getElementById('count').addEventListener('change', render);
+    document.addEventListener('keydown', (e) => {
+      if (e.key.toLowerCase() === 'g') render(); // quick regen via keyboard
+    });
+    render();
+  </script>
+</body>
+</html>
